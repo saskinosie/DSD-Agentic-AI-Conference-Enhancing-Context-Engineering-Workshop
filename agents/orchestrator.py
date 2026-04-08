@@ -41,8 +41,7 @@ SUBAGENT_HANDLERS = {
 async def process_turn(
     session: SessionState,
     utterance: str,
-    qdrant,
-    collection_name: str = "financial_contracts",
+    conn,
 ) -> str:
     """
     Process a single user turn through the full orchestration pipeline:
@@ -115,6 +114,6 @@ async def process_turn(
 
     print(f"  [Route] -> {session.current_intent} subagent")
 
-    response = await handler(qdrant, collection_name, session.filled_slots)
+    response = await handler(conn, session.filled_slots)
     session.add_turn("assistant", response)
     return response

@@ -10,15 +10,21 @@ Usage:
 
 import subprocess
 import sys
+import time
+
+
+CRDB_IMAGE = "cockroachdb/cockroach:v25.4.6"
+DATABASE_URL = "postgresql://root@localhost:26257/defaultdb?sslmode=disable"
+WORKSHOP_URL = "postgresql://root@localhost:26257/workshop?sslmode=disable"
 
 
 def check_docker():
     print("=" * 60)
-    print("Step 1: Pulling Qdrant Docker image (~70 MB)")
+    print("Step 1: Pulling CockroachDB Docker image (~400 MB)")
     print("=" * 60)
     try:
         subprocess.run(
-            ["docker", "pull", "qdrant/qdrant:v1.17.1"],
+            ["docker", "pull", CRDB_IMAGE],
             check=True,
         )
         print("Docker image pulled successfully.\n")
@@ -57,6 +63,68 @@ def download_dataset():
         print(f"ERROR: Dataset download failed: {e}\n")
 
 
+def init_database():
+    print("=" * 60)
+    print("Step 4: Initializing CockroachDB database")
+    print("=" * 60)
+
+    # Start CockroachDB via docker compose
+    try:
+        subprocess.run(
+            ["docker", "compose", "up", "-d"],
+            check=True,
+        )
+        print("CockroachDB container started.")
+    except FileNotFoundError:
+        print("ERROR: Docker not found. Please install Docker Desktop first.")
+        return
+    except subprocess.CalledProcessError:
+        print("ERROR: docker compose up failed. Make sure Docker Desktop is running.")
+        return
+
+    # Wait for CockroachDB to be ready
+    print("Waiting for CockroachDB to accept connections...", end="", flush=True)
+    import psycopg2
+
+    for attempt in range(30):
+        try:
+            conn = psycopg2.connect(DATABASE_URL)
+            conn.autocommit = True
+            conn.close()
+            print(" ready!")
+            break
+        except Exception:
+            print(".", end="", flush=True)
+            time.sleep(1)
+    else:
+        print("\nERROR: CockroachDB did not become ready in time.\n")
+        return
+
+    # Create workshop database and enable vector indexes
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        conn.autocommit = True
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM information_schema.schemata "
+                "WHERE catalog_name = 'workshop'"
+            )
+            if not cur.fetchone():
+                cur.execute("CREATE DATABASE workshop")
+                print("Created 'workshop' database.")
+            else:
+                print("Database 'workshop' already exists.")
+
+            cur.execute(
+                "SET CLUSTER SETTING feature.vector_index.enabled = true"
+            )
+            print("Enabled vector index support.")
+        conn.close()
+        print("Database initialization complete.\n")
+    except Exception as e:
+        print(f"ERROR: Database initialization failed: {e}\n")
+
+
 def verify():
     print("=" * 60)
     print("Verification")
@@ -67,7 +135,7 @@ def verify():
     # Check Docker image
     try:
         result = subprocess.run(
-            ["docker", "image", "inspect", "qdrant/qdrant:v1.17.1"],
+            ["docker", "image", "inspect", CRDB_IMAGE],
             capture_output=True,
         )
         if result.returncode == 0:
@@ -79,13 +147,27 @@ def verify():
         errors.append("Docker not installed")
         print("  Docker:          NOT INSTALLED")
 
+    # Check CockroachDB is running and workshop database exists
+    try:
+        import psycopg2
+
+        conn = psycopg2.connect(WORKSHOP_URL)
+        conn.autocommit = True
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")
+        conn.close()
+        print("  CockroachDB:     OK (workshop database accessible)")
+    except Exception:
+        errors.append("CockroachDB not running or workshop database missing")
+        print("  CockroachDB:     NOT READY (run: docker compose up -d)")
+
     # Check Python packages
     try:
-        import qdrant_client
-        print(f"  qdrant-client:   OK (v{qdrant_client.__version__})")
+        import psycopg2
+        print(f"  psycopg2:        OK (v{psycopg2.__version__})")
     except ImportError:
-        errors.append("qdrant-client not installed")
-        print("  qdrant-client:   MISSING")
+        errors.append("psycopg2 not installed")
+        print("  psycopg2:        MISSING")
 
     try:
         import pydantic_ai
@@ -153,10 +235,11 @@ if __name__ == "__main__":
     print("Enhancing Context Engineering with Agentic Integration")
     print("into Vector Database Queries")
     print()
-    print("This script will download ~720 MB of data.")
+    print("This script will download ~1 GB of data.")
     print("Run this at home before the workshop.\n")
 
     check_docker()
     install_dependencies()
     download_dataset()
+    init_database()
     verify()

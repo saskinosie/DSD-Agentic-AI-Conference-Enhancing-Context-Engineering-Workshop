@@ -2,7 +2,6 @@ import openai
 import os
 
 from pydantic_ai import Agent
-from qdrant_client.models import Filter, FieldCondition, MatchValue
 
 
 support_agent = Agent(
@@ -39,38 +38,45 @@ def _embed_text(text: str) -> list[float]:
     return response.data[0].embedding
 
 
-async def handle_support_query(qdrant, collection_name: str, slots: dict[str, str]) -> str:
-    filter_conditions = []
+async def handle_support_query(conn, slots: dict[str, str]) -> str:
+    conditions = []
+    params = []
 
     if slots.get("author"):
-        filter_conditions.append(
-            FieldCondition(key="department_name", match=MatchValue(value=slots["author"]))
-        )
+        conditions.append("department_name = %s")
+        params.append(slots["author"])
 
     if slots.get("contract_type"):
-        filter_conditions.append(
-            FieldCondition(key="product_type_name", match=MatchValue(value=slots["contract_type"]))
-        )
+        conditions.append("product_type_name = %s")
+        params.append(slots["contract_type"])
 
-    query_filter = Filter(must=filter_conditions) if filter_conditions else None
     search_query = slots.get("issue_keyword", "product details specifications help")
     query_vector = _embed_text(search_query)
 
-    results = qdrant.query_points(
-        collection_name=collection_name,
-        query=query_vector,
-        query_filter=query_filter,
-        limit=5,
-    ).points
+    where_clause = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+    params.append(str(query_vector))
+
+    sql = f"""
+        SELECT prod_name, product_type_name, colour_group_name,
+               section_name, detail_desc
+        FROM products
+        {where_clause}
+        ORDER BY embedding <=> %s
+        LIMIT 5
+    """
+
+    with conn.cursor() as cur:
+        cur.execute(sql, params)
+        results = cur.fetchall()
 
     if not results:
         return "No products found matching your support query. Try broadening your search."
 
     context = "\n\n---\n\n".join(
-        f"Product: {hit.payload['prod_name']} ({hit.payload['product_type_name']})\n"
-        f"Color: {hit.payload['colour_group_name']} | Section: {hit.payload['section_name']}\n"
-        f"Description: {hit.payload['detail_desc']}"
-        for hit in results
+        f"Product: {row[0]} ({row[1]})\n"
+        f"Color: {row[2]} | Section: {row[3]}\n"
+        f"Description: {row[4]}"
+        for row in results
     )
 
     result = await support_agent.run(

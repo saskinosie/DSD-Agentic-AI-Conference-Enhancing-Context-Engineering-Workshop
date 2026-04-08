@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Qdrant](https://img.shields.io/badge/qdrant-1.17-red.svg)
+![CockroachDB](https://img.shields.io/badge/cockroachdb-25.2-blue.svg)
 
 > Build a production-grade multi-agent RAG system that decomposes complex queries, applies dynamic filtering, and orchestrates intent-based conversations over a vector database.
 
@@ -16,7 +16,7 @@ This workshop builds from the ground up. Starting with vector database fundament
 
 ### [Part 1: Vector Database Fundamentals](notebooks/1-vector-db-fundamentals.ipynb)
 **Foundation** (0:00 – 0:20): How vector databases store and retrieve contextual information
-- Spin up a local Qdrant instance using Docker
+- Spin up a local CockroachDB instance using Docker
 - Load an e-commerce dataset and embed it with OpenAI
 - Perform semantic and filtered searches
 - Apply payload filters for precise results
@@ -61,9 +61,9 @@ git clone https://github.com/saskinosie/Enhancing-Context-Engineering-Workshop.g
 cd Enhancing-Context-Engineering-Workshop
 ```
 
-**2. Pull the Qdrant Docker image (~70 MB)**
+**2. Pull the CockroachDB Docker image (~400 MB)**
 ```bash
-docker pull qdrant/qdrant:v1.17.1
+docker pull cockroachdb/cockroach:v25.2.4
 ```
 
 **3. Create virtual environment and install Python dependencies (~400 MB)**
@@ -84,12 +84,12 @@ cp .env.example .env
 # Edit .env with your OpenAI API key
 ```
 
-**6. Start Qdrant**
+**6. Start CockroachDB**
 ```bash
 docker compose up -d
 ```
 
-Qdrant will be available at `http://localhost:6333` (REST API) and `http://localhost:6334` (gRPC). You can also view the dashboard at `http://localhost:6333/dashboard`.
+CockroachDB will be available at `postgresql://root@localhost:26257` (SQL). You can also view the admin UI at `http://localhost:8080`.
 
 **7. Verify installation**
 
@@ -116,7 +116,7 @@ Intent + Confidence Score
  ↓
 [Dynamic Filter Generator] — generates payload filters per subquery
  ↓
-[Qdrant] — vector search retrieval per subquery
+[CockroachDB] — vector search retrieval per subquery
  ↓
 [Result Unifier] — merges retrieved context
  ↓
@@ -144,7 +144,7 @@ Response → User
 ├── data/                                 # Workshop dataset
 ├── img/                                  # Setup screenshots
 ├── setup.py                              # Pre-download script (run before workshop)
-├── docker-compose.yml                    # Local Qdrant instance
+├── docker-compose.yml                    # Local CockroachDB instance
 ├── requirements.txt                      # Python dependencies
 ├── .env.example                          # Template for API keys
 ├── pyproject.toml                        # Ruff linter/formatter config
@@ -153,7 +153,7 @@ Response → User
 
 ## Key Technologies
 
-- **[Qdrant](https://qdrant.tech/)** - Open-source vector database (local via Docker)
+- **[CockroachDB](https://www.cockroachlabs.com/)** - Distributed SQL database with native vector search (local via Docker)
 - **[Pydantic AI](https://ai.pydantic.dev/)** - Framework for building production-grade AI agents
 - **[OpenAI GPT-4.1-mini](https://platform.openai.com/)** - Language model for embeddings, query optimization, and agent reasoning
 - **[HuggingFace Datasets](https://huggingface.co/datasets/Qdrant/hm_ecommerce_products)** - H&M e-commerce product catalog
@@ -186,8 +186,7 @@ Scott Askinosie is a Developer Advocate at Contextual AI and former Lead Technic
 
 ## Resources & Further Reading
 
-- [Qdrant Documentation](https://qdrant.tech/documentation/)
+- [CockroachDB Vector Search](https://www.cockroachlabs.com/docs/stable/vector-indexes)
 - [Pydantic AI Documentation](https://ai.pydantic.dev/)
-- [Understanding Vector Embeddings](https://qdrant.tech/articles/what-are-embeddings/)
 
 ---

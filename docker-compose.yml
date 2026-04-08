@@ -1,13 +1,14 @@
 ---
 services:
-  qdrant:
-    image: qdrant/qdrant:v1.17.1
+  cockroachdb:
+    image: cockroachdb/cockroach:v25.4.6
+    command: start-single-node --insecure
     ports:
-    - 6333:6333
-    - 6334:6334
+    - 26257:26257
+    - 8080:8080
     volumes:
-    - qdrant_data:/qdrant/storage
-    restart: on-failure:0
+    - cockroach_data:/cockroach/cockroach-data
+    restart: on-failure
 volumes:
-  qdrant_data:
+  cockroach_data:
 ...
