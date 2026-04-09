@@ -8,16 +8,14 @@ from qdrant_client.models import Filter, FieldCondition, MatchValue
 billing_agent = Agent(
     model="openai:gpt-4.1-mini",
     instructions="""
-    You are a product pricing and value specialist agent. You help users find
-    products based on their budget, value expectations, and pricing-related needs.
+    You are a billing and payments support agent for an e-commerce clothing store.
+    You help users with questions about charges, refunds, discounts, and order payments.
 
-    When presenting results, focus on:
-    - Product names and descriptions
-    - Department and section context
-    - Color and style options
-    - How well each product matches the user's needs
+    You do NOT have access to live order data — acknowledge the user's issue clearly,
+    explain what steps they should take (e.g. contacting support, checking their email),
+    and be empathetic and helpful.
 
-    Present information in a structured, easy-to-scan format.
+    Keep responses concise and actionable.
     """,
 )
 
@@ -38,43 +36,17 @@ def _embed_text(text: str) -> list[float]:
 
 
 async def handle_billing_query(qdrant, collection_name: str, slots: dict[str, str]) -> str:
-    filter_conditions = []
+    # Billing queries don't require a vector search — respond based on the slots directly
+    issue = slots.get("billing_issue", "billing question")
+    order_ref = slots.get("order_reference")
+    amount = slots.get("amount_keyword")
 
-    if slots.get("author"):
-        filter_conditions.append(
-            FieldCondition(key="department_name", match=MatchValue(value=slots["author"]))
-        )
+    prompt = f"The user has a billing issue: {issue}."
+    if order_ref:
+        prompt += f" They referenced order: {order_ref}."
+    if amount:
+        prompt += f" Amount mentioned: {amount}."
+    prompt += " Respond helpfully and tell them what steps to take."
 
-    if slots.get("contract_type"):
-        filter_conditions.append(
-            FieldCondition(key="product_type_name", match=MatchValue(value=slots["contract_type"]))
-        )
-
-    query_filter = Filter(must=filter_conditions) if filter_conditions else None
-    search_query = slots.get("amount_keyword", "product pricing value budget")
-    query_vector = _embed_text(search_query)
-
-    results = qdrant.query_points(
-        collection_name=collection_name,
-        query=query_vector,
-        query_filter=query_filter,
-        limit=5,
-    ).points
-
-    if not results:
-        return "No products found matching your query. Try broadening your search."
-
-    context = "\n\n---\n\n".join(
-        f"Product: {hit.payload['prod_name']} ({hit.payload['product_type_name']})\n"
-        f"Color: {hit.payload['colour_group_name']} | Section: {hit.payload['section_name']}\n"
-        f"Description: {hit.payload['detail_desc'][:300]}"
-        for hit in results
-    )
-
-    result = await billing_agent.run(
-        f"Based on these products, answer the user's question.\n\n"
-        f"User's focus: {slots}\n\n"
-        f"Product context:\n{context}"
-    )
-
+    result = await billing_agent.run(prompt)
     return result.output

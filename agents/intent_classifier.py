@@ -17,12 +17,13 @@ intent_classifier = Agent(
     You classify user utterances into one of these intents: {SUPPORTED_INTENTS}
 
     Intent definitions:
-    - billing: Questions about payment terms, invoices, fees, salary, compensation,
-      pricing, or financial obligations in contracts.
-    - product: Questions about what products or services are described in contracts,
-      contract types available, features, or specifications.
-    - support: Questions about contract terms, termination clauses, dispute resolution,
-      legal obligations, or help understanding contract language.
+    - billing: Questions about payments, invoices, charges, pricing, or discounts.
+    - product: The user wants to find, search, or browse products. They describe something
+      they want to buy — a category, color, style, or item type. The goal is product retrieval.
+    - support: The user has a problem with an existing order or purchase. Examples: returns,
+      exchanges, damaged items, wrong item received, delivery issues, or complaints.
+      This is NOT about finding new products — it is about resolving an issue with something
+      already purchased.
     - unknown: The query does not clearly fit any of the above intents.
 
     Return the most likely intent, a confidence score between 0 and 1,

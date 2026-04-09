@@ -4,32 +4,32 @@ from pydantic_ai import Agent
 
 # Each intent has a set of required and optional slots
 SLOT_DEFINITIONS = {
-    "billing": {
-        "required": ["author"],
-        "optional": ["date_range", "contract_type", "amount_keyword"],
+    "product": {
+        "required": ["product_keyword"],
+        "optional": ["colour", "category", "section"],
         "descriptions": {
-            "author": "The person or entity whose contracts to search",
-            "date_range": "A time period to filter by (e.g. 'after 2023', 'last year')",
-            "contract_type": "The type of contract (e.g. 'employment', 'service agreement')",
-            "amount_keyword": "Keywords related to amounts (e.g. 'salary', 'fee', 'payment')",
+            "product_keyword": "What the user is looking for (e.g. 'jacket', 'summer dress', 'running shoes')",
+            "colour": "A color preference (e.g. 'black', 'dark blue', 'neutral tones')",
+            "category": "The gender/age category (e.g. 'Menswear', 'Ladieswear', 'Kids')",
+            "section": "A specific section or department (e.g. 'Sport', 'Basics', 'Divided')",
         },
     },
-    "product": {
-        "required": ["contract_type"],
-        "optional": ["author", "feature_keyword"],
+    "billing": {
+        "required": ["billing_issue"],
+        "optional": ["order_reference", "amount_keyword"],
         "descriptions": {
-            "contract_type": "The type of contract to search for (e.g. 'partnership', 'service agreement')",
-            "author": "The person or entity who authored the contract",
-            "feature_keyword": "Specific features or terms to look for",
+            "billing_issue": "The nature of the billing question (e.g. 'refund', 'charge', 'discount code')",
+            "order_reference": "An order number or reference the user mentions",
+            "amount_keyword": "Any amount or pricing detail mentioned (e.g. '£49.99', 'overcharged')",
         },
     },
     "support": {
         "required": ["issue_keyword"],
-        "optional": ["author", "contract_type"],
+        "optional": ["order_reference", "product_keyword"],
         "descriptions": {
-            "issue_keyword": "The specific issue or clause (e.g. 'termination', 'dispute', 'confidentiality')",
-            "author": "The person or entity whose contracts to search",
-            "contract_type": "The type of contract to search",
+            "issue_keyword": "The problem the user is reporting (e.g. 'broken zipper', 'wrong size', 'not delivered')",
+            "order_reference": "An order number or reference the user mentions",
+            "product_keyword": "The product the issue relates to (e.g. 'jacket', 'dress')",
         },
     },
 }
