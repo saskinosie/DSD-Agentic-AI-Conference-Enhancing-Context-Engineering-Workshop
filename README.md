@@ -37,10 +37,11 @@ This workshop builds from the ground up. Starting with vector database fundament
 - State management that handles intent switches mid-conversation with clean resets
 - **Key insight**: How intent-based design differs fundamentally from rank-based routing
 
-### [Part 4: Evaluation and Production Patterns](notebooks/4-evaluation.ipynb)
-**Wrap-up** (1:45 – 2:00): Know when your system is actually working
+### [Bonus: Evaluation and Production Patterns](notebooks/4-evaluation.ipynb)
+**Take-home reference**: Know when your system is actually working
 - Retrieval evaluation with MRR, NDCG, and precision metrics
 - Production failure modes: intent bleed, slot hallucination, low-confidence deadlocks
+- LLM-based RAG evaluation with Comet Opik (context precision, answer relevance, hallucination detection)
 - **Key insight**: If you can't measure it, you can't improve it
 
 ## Quick Start
@@ -149,6 +150,21 @@ Response → User
 ├── .env.example                          # Template for API keys
 ├── pyproject.toml                        # Ruff linter/formatter config
 └── README.md                             # You are here!
+```
+
+## Bonus: Opik Evaluation Setup
+
+The bonus notebook integrates [Comet Opik](https://www.comet.com/site/products/opik/) for LLM-based RAG evaluation — context precision, answer relevance, and hallucination detection logged to a live dashboard.
+
+**1. Create a free Opik account**
+Sign up at [https://www.comet.com/signup](https://www.comet.com/signup)
+
+**2. Get your API key**
+Go to [https://www.comet.com/account-settings](https://www.comet.com/account-settings) and copy your API key.
+
+**3. Add it to your `.env` file**
+```bash
+OPIK_API_KEY=your-opik-api-key-here
 ```
 
 ## Key Technologies
