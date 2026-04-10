@@ -40,23 +40,29 @@ def _embed_text(text: str) -> list[float]:
 async def handle_product_query(qdrant, collection_name: str, slots: dict[str, str]) -> str:
     filter_conditions = []
 
-    if slots.get("colour"):
+    # Only filter on colour if it looks like a single canonical value (no spaces/conjunctions).
+    # The slot filler sometimes returns phrases like "red or burgundy" which won't match any
+    # single DB value, so we skip those and let the vector search handle colour semantics.
+    colour = slots.get("colour", "")
+    if colour and " " not in colour and len(colour) < 20:
         filter_conditions.append(
-            FieldCondition(key="colour_group_name", match=MatchValue(value=slots["colour"]))
+            FieldCondition(key="colour_group_name", match=MatchValue(value=colour))
         )
 
-    if slots.get("category"):
-        filter_conditions.append(
-            FieldCondition(key="index_name", match=MatchValue(value=slots["category"]))
-        )
-
-    if slots.get("section"):
-        filter_conditions.append(
-            FieldCondition(key="section_name", match=MatchValue(value=slots["section"]))
-        )
+    # category and section are intentionally excluded from hard filters — the slot filler
+    # extracts natural language (e.g. "women", "light") that won't exactly match DB canonical
+    # values (e.g. "Ladieswear", "Divided"). Vector search handles these semantically.
 
     query_filter = Filter(must=filter_conditions) if filter_conditions else None
-    search_query = slots.get("product_keyword", "clothing")
+    # Build a richer query string so the vector search uses all slot context
+    parts = [slots.get("product_keyword", "clothing")]
+    if slots.get("category"):
+        parts.append(slots["category"])
+    if slots.get("section"):
+        parts.append(slots["section"])
+    if slots.get("colour"):
+        parts.append(slots["colour"])
+    search_query = " ".join(parts)
     query_vector = _embed_text(search_query)
 
     results = qdrant.query_points(
